@@ -10,6 +10,10 @@ export function SmoothScrollProvider() {
   useEffect(() => {
     if (typeof window === "undefined") return;
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    if (window.matchMedia("(max-width: 767px), (pointer: coarse), (hover: none)").matches) {
+      ScrollTrigger.refresh();
+      return;
+    }
 
     const lenis = new Lenis({
       duration: 1.5,
@@ -18,7 +22,6 @@ export function SmoothScrollProvider() {
       gestureOrientation: "vertical",
       smoothWheel: true,
       wheelMultiplier: 1,
-      touchMultiplier: 2,
     });
 
     lenis.on("scroll", ScrollTrigger.update);

@@ -1,4 +1,4 @@
-import { forwardRef, useCallback, useRef, useState } from "react";
+import { forwardRef, useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useGSAP } from "@gsap/react";
 import { gsap } from "gsap";
@@ -43,21 +43,53 @@ export function SeatShowcase({
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const imagesRef = useRef<HTMLImageElement[]>([]);
   const [imagesLoaded, setImagesLoaded] = useState(false);
+  const [isMobileViewport, setIsMobileViewport] = useState(
+    () => typeof window !== "undefined" && window.matchMedia("(max-width: 767px)").matches,
+  );
   const frameObj = useRef({ index: 0 });
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const query = window.matchMedia("(max-width: 767px)");
+    const updateViewportState = () => setIsMobileViewport(query.matches);
+
+    updateViewportState();
+    query.addEventListener("change", updateViewportState);
+
+    return () => query.removeEventListener("change", updateViewportState);
+  }, []);
+
+  useEffect(() => {
+    if (!imagesLoaded) return;
+    requestAnimationFrame(() => ScrollTrigger.refresh());
+  }, [imagesLoaded, isMobileViewport]);
 
   // Preload images
   useGSAP(() => {
-    let loadedCount = 0;
-    const totalFrames = SEAT_FRAMES.length;
+    let readyFrameCount = 0;
+    let hasReportedReady = false;
+    const isMobile = window.matchMedia("(max-width: 767px), (pointer: coarse)").matches;
+    const requiredFrameIndexes = isMobile
+      ? new Set([0, 15, 29, 36])
+      : new Set(SEAT_FRAMES.map((_, index) => index));
+    const totalRequiredFrames = requiredFrameIndexes.size;
 
     SEAT_FRAMES.forEach((frame, i) => {
       const img = new Image();
       img.src = frame.src;
       img.onload = () => {
         imagesRef.current[i] = img;
-        loadedCount++;
-        onProgress?.((loadedCount / totalFrames) * 100);
-        if (loadedCount === totalFrames) {
+
+        if (!requiredFrameIndexes.has(i)) {
+          return;
+        }
+
+        readyFrameCount++;
+        onProgress?.((readyFrameCount / totalRequiredFrames) * 100);
+
+        if (!hasReportedReady && readyFrameCount === totalRequiredFrames) {
+          hasReportedReady = true;
           setImagesLoaded(true);
           onReady?.();
           renderFrame(0);
@@ -96,11 +128,11 @@ export function SeatShowcase({
 
   // Use GSAP Ticker for smooth 60fps rendering
   useGSAP(() => {
-    if (!imagesLoaded) return;
+    if (!imagesLoaded || isMobileViewport) return;
     const tickerUpdate = () => renderFrame(frameObj.current.index);
     gsap.ticker.add(tickerUpdate);
     return () => gsap.ticker.remove(tickerUpdate);
-  }, [imagesLoaded, renderFrame]);
+  }, [imagesLoaded, isMobileViewport, renderFrame]);
 
   useGSAP(
     () => {
@@ -115,10 +147,14 @@ export function SeatShowcase({
           reduceMotion: "(prefers-reduced-motion: reduce)",
         },
         (context) => {
-          const { isMobile = false, reduceMotion = false } = (context.conditions ?? {}) as {
-            isMobile?: boolean;
+          const { isDesktop = false, reduceMotion = false } = (context.conditions ?? {}) as {
+            isDesktop?: boolean;
             reduceMotion?: boolean;
           };
+
+          if (!isDesktop) {
+            return;
+          }
 
           if (reduceMotion) {
             renderFrame(0);
@@ -126,19 +162,19 @@ export function SeatShowcase({
           }
 
           // Initial Setup
-          gsap.set(aboutLayer.current, { opacity: 0, y: isMobile ? 40 : 80 });
+          gsap.set(aboutLayer.current, { opacity: 0, y: 80 });
           gsap.set([firstPanel.current, secondPanel.current], {
             autoAlpha: 0,
-            y: isMobile ? 30 : 80,
+            y: 80,
           });
-          gsap.set(finalLayer.current, { autoAlpha: 0, y: isMobile ? 40 : 70 });
+          gsap.set(finalLayer.current, { autoAlpha: 0, y: 70 });
 
           gsap.set(imageWrap.current, {
             xPercent: -50,
             yPercent: -50,
-            x: isMobile ? "50vw" : 0,
-            y: isMobile ? "12vh" : 230,
-            scale: isMobile ? 2.5 : 1.52,
+            x: 0,
+            y: 230,
+            scale: 1.52,
           });
 
           const tl = gsap.timeline({
@@ -156,9 +192,9 @@ export function SeatShowcase({
           tl.to(
             imageWrap.current,
             {
-              scale: isMobile ? 1.05 : 1.02,
+              scale: 1.02,
               x: 0,
-              y: isMobile ? "-10vh" : 44,
+              y: 44,
               duration: 0.15,
             },
             0,
@@ -166,14 +202,14 @@ export function SeatShowcase({
             .to(heroCopy.current, { y: -60, opacity: 0, duration: 0.1 }, 0.02)
             .to(heroBackdrop.current, { opacity: 0, scale: 1.1, duration: 0.15 }, 0)
             .to(aboutLayer.current, { opacity: 1, y: 0, duration: 0.1 }, 0.08)
-            .to(aboutText.current, { y: isMobile ? -20 : -44, duration: 0.15 }, 0.05);
+            .to(aboutText.current, { y: -44, duration: 0.15 }, 0.05);
 
           // Phase 2: Settle
-          tl.to(
-            imageWrap.current,
-            { y: isMobile ? "-14vh" : 18, scale: isMobile ? 0.95 : 0.96, duration: 0.1 },
+          tl.to(imageWrap.current, { y: 18, scale: 0.96, duration: 0.1 }, 0.15).to(
+            aboutText.current,
+            { y: -86, duration: 0.1 },
             0.15,
-          ).to(aboutText.current, { y: isMobile ? -40 : -86, duration: 0.1 }, 0.15);
+          );
 
           // Phase 3: First Feature
           tl.to(heroLayer.current, { opacity: 0, duration: 0.05 }, 0.25)
@@ -181,9 +217,9 @@ export function SeatShowcase({
             .to(
               imageWrap.current,
               {
-                x: isMobile ? 0 : "-25vw",
-                y: isMobile ? "-20vh" : 8,
-                scale: isMobile ? 0.95 : 0.78,
+                x: "-25vw",
+                y: 8,
+                scale: 0.78,
                 duration: 0.15,
               },
               0.25,
@@ -211,9 +247,9 @@ export function SeatShowcase({
             .to(
               imageWrap.current,
               {
-                x: isMobile ? 0 : "27vw",
-                y: isMobile ? "-20vh" : 36,
-                scale: isMobile ? 0.95 : 0.78,
+                x: "27vw",
+                y: 36,
+                scale: 0.78,
                 duration: 0.22,
                 ease: "power2.inOut",
               },
@@ -243,9 +279,9 @@ export function SeatShowcase({
               imageWrap.current,
               {
                 autoAlpha: 0,
-                x: isMobile ? 0 : "30vw",
-                y: isMobile ? "-20vh" : 120,
-                scale: isMobile ? 0.95 : 0.48,
+                x: "30vw",
+                y: 120,
+                scale: 0.48,
                 duration: 0.08,
               },
               0.75,
@@ -284,7 +320,7 @@ export function SeatShowcase({
 
   return (
     <section id="top" ref={root} className="seat-showcase relative bg-canvas-warm">
-      <div className="seat-showcase__stage sticky top-0 min-h-screen overflow-hidden bg-canvas-warm">
+      <div className="seat-showcase__stage sticky top-0 hidden min-h-screen overflow-hidden bg-canvas-warm md:block">
         <HeroSeatReveal
           heroLayerRef={heroLayer}
           heroCopyRef={heroCopy}
@@ -311,11 +347,11 @@ export function SeatShowcase({
         <SeatFinalCTA ref={finalLayer} />
       </div>
 
-      {portalTarget ? createPortal(seatFrame, portalTarget) : null}
+      {portalTarget && !isMobileViewport ? createPortal(seatFrame, portalTarget) : null}
 
-      <div aria-hidden className="h-[480vh]" />
+      <div aria-hidden className="hidden h-[480vh] md:block" />
 
-      <div className="seat-showcase__mobile hidden">
+      <div className="seat-showcase__mobile block md:hidden">
         <StaticMobileSeatSection
           image={SEAT_FRAMES[0].src}
           alt="Custom cushion workshop showcase image"
@@ -394,10 +430,11 @@ function SeatComparisonSlider({
   className?: string;
 }) {
   const [split, setSplit] = useState(50);
-  const [dragging, setDragging] = useState(false);
   const sliderRef = useRef<HTMLDivElement>(null);
   const pullRef = useRef<HTMLDivElement>(null);
   const lastXRef = useRef<number | null>(null);
+  const draggingRef = useRef(false);
+  const pointerStartRef = useRef<{ x: number; y: number; pointerId: number } | null>(null);
   const resetTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const clampSplit = (value: number) => Math.min(100, Math.max(0, value));
@@ -412,15 +449,40 @@ function SeatComparisonSlider({
   }, []);
 
   const handlePointerDown = (event: React.PointerEvent<HTMLDivElement>) => {
-    setDragging(true);
+    pointerStartRef.current = {
+      x: event.clientX,
+      y: event.clientY,
+      pointerId: event.pointerId,
+    };
     lastXRef.current = event.clientX;
     if (resetTimeoutRef.current) clearTimeout(resetTimeoutRef.current);
-    event.currentTarget.setPointerCapture(event.pointerId);
-    updateSplitFromClientX(event.clientX);
+
+    if (event.pointerType !== "touch") {
+      draggingRef.current = true;
+      event.currentTarget.setPointerCapture(event.pointerId);
+      updateSplitFromClientX(event.clientX);
+    }
   };
 
   const handlePointerMove = (event: React.PointerEvent<HTMLDivElement>) => {
-    if (!dragging) return;
+    if (!draggingRef.current && pointerStartRef.current?.pointerId === event.pointerId) {
+      const deltaX = event.clientX - pointerStartRef.current.x;
+      const deltaY = event.clientY - pointerStartRef.current.y;
+
+      if (Math.abs(deltaY) > Math.abs(deltaX) && Math.abs(deltaY) > 8) {
+        return;
+      }
+
+      if (Math.abs(deltaX) > 8) {
+        draggingRef.current = true;
+        event.currentTarget.setPointerCapture(event.pointerId);
+      } else {
+        return;
+      }
+    }
+
+    if (!draggingRef.current) return;
+    event.preventDefault();
     updateSplitFromClientX(event.clientX);
 
     if (lastXRef.current !== null && pullRef.current) {
@@ -436,7 +498,7 @@ function SeatComparisonSlider({
 
       if (resetTimeoutRef.current) clearTimeout(resetTimeoutRef.current);
       resetTimeoutRef.current = setTimeout(() => {
-        if (pullRef.current && dragging) {
+        if (pullRef.current && draggingRef.current) {
           gsap.to(pullRef.current, {
             rotation: 0,
             duration: 0.8,
@@ -450,7 +512,8 @@ function SeatComparisonSlider({
   };
 
   const handlePointerEnd = (event: React.PointerEvent<HTMLDivElement>) => {
-    setDragging(false);
+    draggingRef.current = false;
+    pointerStartRef.current = null;
     lastXRef.current = null;
     if (resetTimeoutRef.current) clearTimeout(resetTimeoutRef.current);
     if (event.currentTarget.hasPointerCapture(event.pointerId)) {
