@@ -313,39 +313,89 @@ export function SeatShowcase({
       const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
       if (reduceMotion) {
-        gsap.set([mobileHeroCopy.current, mobileHeroImage.current], { clearProps: "all" });
+        gsap.set(
+          [
+            mobileHeroCopy.current,
+            mobileHeroImage.current,
+            ".mobile-seat-hero-title",
+            ".mobile-seat-section",
+          ],
+          { clearProps: "all" },
+        );
         return;
       }
 
-      gsap.fromTo(
-        mobileHeroImage.current,
-        { y: 28, scale: 0.94, opacity: 0 },
-        {
-          y: 0,
-          scale: 1,
-          opacity: 1,
-          duration: 0.9,
-          ease: "power3.out",
-          scrollTrigger: {
-            trigger: mobileHero.current,
-            start: "top 82%",
-            toggleActions: "play none none none",
-            invalidateOnRefresh: true,
-          },
-        },
-      );
-
-      gsap.to(mobileHeroCopy.current, {
-        y: -34,
-        opacity: 0.42,
-        ease: "none",
+      const heroTl = gsap.timeline({
         scrollTrigger: {
           trigger: mobileHero.current,
-          start: "bottom 92%",
-          end: "bottom 38%",
-          scrub: 0.45,
+          start: "top top",
+          end: "bottom top",
+          scrub: 0.7,
           invalidateOnRefresh: true,
         },
+      });
+
+      heroTl
+        .fromTo(
+          mobileHeroImage.current,
+          { y: 12, scale: 1.28, opacity: 1 },
+          { y: -18, scale: 0.96, opacity: 1, ease: "none" },
+          0,
+        )
+        .fromTo(
+          ".mobile-seat-hero-title",
+          { y: 34, scale: 1.08, opacity: 0.24 },
+          { y: -46, scale: 0.98, opacity: 0.1, ease: "none" },
+          0,
+        )
+        .fromTo(
+          mobileHeroCopy.current,
+          { y: 28, opacity: 0.55 },
+          { y: -24, opacity: 1, ease: "none" },
+          0.1,
+        );
+
+      gsap.utils.toArray<HTMLElement>(".mobile-seat-section").forEach((section) => {
+        const image = section.querySelector(".mobile-seat-section-image");
+        const content = section.querySelectorAll(
+          ".mobile-seat-section-title, .mobile-seat-section-body",
+        );
+
+        gsap.fromTo(
+          image,
+          { y: 34, scale: 0.96, opacity: 0 },
+          {
+            y: 0,
+            scale: 1,
+            opacity: 1,
+            duration: 0.78,
+            ease: "power3.out",
+            scrollTrigger: {
+              trigger: section,
+              start: "top 82%",
+              toggleActions: "play none none none",
+              invalidateOnRefresh: true,
+            },
+          },
+        );
+
+        gsap.fromTo(
+          content,
+          { y: 28, opacity: 0 },
+          {
+            y: 0,
+            opacity: 1,
+            duration: 0.66,
+            ease: "power3.out",
+            stagger: 0.06,
+            scrollTrigger: {
+              trigger: section,
+              start: "top 76%",
+              toggleActions: "play none none none",
+              invalidateOnRefresh: true,
+            },
+          },
+        );
       });
     },
     { scope: root, dependencies: [imagesLoaded] },
@@ -447,25 +497,27 @@ const MobileSeatHero = forwardRef<
   return (
     <section
       ref={ref}
-      className="relative min-h-[100svh] overflow-hidden bg-leather px-6 pb-10 pt-28 text-white"
+      className="relative min-h-[100svh] overflow-hidden bg-leather px-6 pb-10 pt-24 text-white"
     >
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_26%,oklch(0.99_0.006_82/0.14),transparent_34%),linear-gradient(120deg,oklch(0.16_0.012_62)_0%,oklch(0.075_0.012_39)_52%,oklch(0.22_0.017_74)_100%)]" />
       <div className="absolute inset-0 opacity-[0.14] grayscale contrast-150 mix-blend-screen seat-hero-lines" />
       <div className="absolute inset-x-0 bottom-0 h-44 bg-gradient-to-t from-brand-red/20 to-transparent" />
 
-      <div className="relative z-10 flex min-h-[calc(100svh-9.5rem)] flex-col justify-end">
-        <img
-          ref={imageRef}
-          src={image}
-          alt="Custom cushion workshop showcase image"
-          className="mobile-seat-hero-image pointer-events-none mx-auto mb-8 h-auto max-h-[44svh] w-full max-w-[20rem] object-contain drop-shadow-[0_28px_36px_rgba(0,0,0,0.38)]"
-          draggable={false}
-        />
-
-        <div ref={copyRef} className="mobile-seat-hero-copy">
-          <h1 className="font-display text-[clamp(4.5rem,21vw,6.4rem)] uppercase leading-[0.78] tracking-tight">
+      <div className="relative z-10 flex min-h-[calc(100svh-8.5rem)] flex-col justify-end">
+        <div className="relative mb-7 min-h-[54svh]">
+          <h1 className="mobile-seat-hero-title pointer-events-none absolute left-1/2 top-[9%] z-0 w-[118vw] -translate-x-1/2 text-center font-display text-[clamp(6.5rem,32vw,10rem)] uppercase leading-[0.72] tracking-tight text-white/20">
             Custom cushions, shaped by hand.
           </h1>
+          <img
+            ref={imageRef}
+            src={image}
+            alt="Custom cushion workshop showcase image"
+            className="mobile-seat-hero-image pointer-events-none absolute left-1/2 top-[2%] z-10 h-auto max-h-[56svh] w-[116vw] max-w-[29rem] -translate-x-1/2 object-contain drop-shadow-[0_34px_48px_rgba(0,0,0,0.46)]"
+            draggable={false}
+          />
+        </div>
+
+        <div ref={copyRef} className="mobile-seat-hero-copy">
           <p className="mt-6 max-w-sm text-base leading-7 text-white/68">
             From sofa seats and patio pads to vehicle cushions and one-off replacements, we measure,
             cut, stitch, and finish every piece for the way it will be used.
@@ -910,12 +962,16 @@ function StaticMobileSeatSection({
   body: string;
 }) {
   return (
-    <section className="border-t border-black/10 px-6 py-20">
-      <img src={image} alt={alt} className="mx-auto h-auto max-h-[58vh] w-full object-contain" />
-      <h2 className="mt-10 font-display text-6xl uppercase leading-[0.86] text-foreground">
+    <section className="mobile-seat-section border-t border-black/10 px-6 py-20">
+      <img
+        src={image}
+        alt={alt}
+        className="mobile-seat-section-image mx-auto h-auto max-h-[58vh] w-full object-contain"
+      />
+      <h2 className="mobile-seat-section-title mt-10 font-display text-6xl uppercase leading-[0.86] text-foreground">
         {title}
       </h2>
-      <p className="mt-6 text-base leading-7 text-foreground/72">{body}</p>
+      <p className="mobile-seat-section-body mt-6 text-base leading-7 text-foreground/72">{body}</p>
     </section>
   );
 }
