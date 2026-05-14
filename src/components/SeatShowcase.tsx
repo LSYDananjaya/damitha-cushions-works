@@ -39,6 +39,9 @@ export function SeatShowcase({
   const secondPanel = useRef<HTMLDivElement>(null);
   const finalLayer = useRef<HTMLDivElement>(null);
   const imageWrap = useRef<HTMLDivElement>(null);
+  const mobileHero = useRef<HTMLDivElement>(null);
+  const mobileHeroCopy = useRef<HTMLDivElement>(null);
+  const mobileHeroImage = useRef<HTMLImageElement>(null);
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const imagesRef = useRef<HTMLImageElement[]>([]);
@@ -303,6 +306,51 @@ export function SeatShowcase({
     { scope: root, dependencies: [imagesLoaded] },
   );
 
+  useGSAP(
+    () => {
+      if (!mobileHero.current || !imagesLoaded) return;
+
+      const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+      if (reduceMotion) {
+        gsap.set([mobileHeroCopy.current, mobileHeroImage.current], { clearProps: "all" });
+        return;
+      }
+
+      gsap.fromTo(
+        mobileHeroImage.current,
+        { y: 28, scale: 0.94, opacity: 0 },
+        {
+          y: 0,
+          scale: 1,
+          opacity: 1,
+          duration: 0.9,
+          ease: "power3.out",
+          scrollTrigger: {
+            trigger: mobileHero.current,
+            start: "top 82%",
+            toggleActions: "play none none none",
+            invalidateOnRefresh: true,
+          },
+        },
+      );
+
+      gsap.to(mobileHeroCopy.current, {
+        y: -34,
+        opacity: 0.42,
+        ease: "none",
+        scrollTrigger: {
+          trigger: mobileHero.current,
+          start: "bottom 92%",
+          end: "bottom 38%",
+          scrub: 0.45,
+          invalidateOnRefresh: true,
+        },
+      });
+    },
+    { scope: root, dependencies: [imagesLoaded] },
+  );
+
   const seatFrame = (
     <div
       ref={imageWrap}
@@ -352,6 +400,12 @@ export function SeatShowcase({
       <div aria-hidden className="hidden h-[480vh] md:block" />
 
       <div className="seat-showcase__mobile block md:hidden">
+        <MobileSeatHero
+          ref={mobileHero}
+          copyRef={mobileHeroCopy}
+          imageRef={mobileHeroImage}
+          image={SEAT_FRAMES[0].src}
+        />
         <StaticMobileSeatSection
           image={SEAT_FRAMES[0].src}
           alt="Custom cushion workshop showcase image"
@@ -381,6 +435,60 @@ export function SeatShowcase({
     </section>
   );
 }
+
+const MobileSeatHero = forwardRef<
+  HTMLDivElement,
+  {
+    copyRef: React.RefObject<HTMLDivElement | null>;
+    imageRef: React.RefObject<HTMLImageElement | null>;
+    image: string;
+  }
+>(function MobileSeatHero({ copyRef, imageRef, image }, ref) {
+  return (
+    <section
+      ref={ref}
+      className="relative min-h-[100svh] overflow-hidden bg-leather px-6 pb-10 pt-28 text-white"
+    >
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_26%,oklch(0.99_0.006_82/0.14),transparent_34%),linear-gradient(120deg,oklch(0.16_0.012_62)_0%,oklch(0.075_0.012_39)_52%,oklch(0.22_0.017_74)_100%)]" />
+      <div className="absolute inset-0 opacity-[0.14] grayscale contrast-150 mix-blend-screen seat-hero-lines" />
+      <div className="absolute inset-x-0 bottom-0 h-44 bg-gradient-to-t from-brand-red/20 to-transparent" />
+
+      <div className="relative z-10 flex min-h-[calc(100svh-9.5rem)] flex-col justify-end">
+        <img
+          ref={imageRef}
+          src={image}
+          alt="Custom cushion workshop showcase image"
+          className="mobile-seat-hero-image pointer-events-none mx-auto mb-8 h-auto max-h-[44svh] w-full max-w-[20rem] object-contain drop-shadow-[0_28px_36px_rgba(0,0,0,0.38)]"
+          draggable={false}
+        />
+
+        <div ref={copyRef} className="mobile-seat-hero-copy">
+          <h1 className="font-display text-[clamp(4.5rem,21vw,6.4rem)] uppercase leading-[0.78] tracking-tight">
+            Custom cushions, shaped by hand.
+          </h1>
+          <p className="mt-6 max-w-sm text-base leading-7 text-white/68">
+            From sofa seats and patio pads to vehicle cushions and one-off replacements, we measure,
+            cut, stitch, and finish every piece for the way it will be used.
+          </p>
+          <div className="mt-8 flex flex-wrap gap-2.5">
+            {["Made to measure", "Foam replacement", "Workshop stitching"].map((item) => (
+              <span
+                key={item}
+                className="rounded-full border border-white/18 px-3.5 py-2 text-[9px] font-semibold uppercase tracking-[0.2em] text-white/70"
+              >
+                {item}
+              </span>
+            ))}
+          </div>
+          <div className="mt-8 flex justify-between border-t border-white/15 pt-5 text-[9px] font-medium uppercase tracking-[0.28em] text-white/48">
+            <span>Damitha Cushion Works</span>
+            <span>Scroll</span>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+});
 
 const SeatFinalCTA = forwardRef<HTMLDivElement>(function SeatFinalCTA(_, ref) {
   return (

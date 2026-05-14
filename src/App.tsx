@@ -521,13 +521,37 @@ function Services() {
       const isMobile = window.innerWidth < 768;
 
       if (isMobile) {
-        gsap.set(seatLeftRef.current, {
-          clipPath: "polygon(0% 0%, 100% 0%, 100% 100%, 0% 100%)",
-        });
-        if (seatRightRef.current) {
-          gsap.set(seatRightRef.current, {
+        gsap.fromTo(
+          seatLeftRef.current,
+          { clipPath: "polygon(0% 0%, 100% 0%, 100% 0%, 0% 0%)" },
+          {
             clipPath: "polygon(0% 0%, 100% 0%, 100% 100%, 0% 100%)",
-          });
+            ease: "none",
+            scrollTrigger: {
+              trigger: seatLeftRef.current,
+              start: "top 84%",
+              end: "bottom 58%",
+              scrub: 0.65,
+              invalidateOnRefresh: true,
+            },
+          },
+        );
+        if (seatRightRef.current) {
+          gsap.fromTo(
+            seatRightRef.current,
+            { clipPath: "polygon(0% 0%, 100% 0%, 100% 0%, 0% 0%)" },
+            {
+              clipPath: "polygon(0% 0%, 100% 0%, 100% 100%, 0% 100%)",
+              ease: "none",
+              scrollTrigger: {
+                trigger: seatRightRef.current,
+                start: "top 86%",
+                end: "bottom 62%",
+                scrub: 0.65,
+                invalidateOnRefresh: true,
+              },
+            },
+          );
         }
       } else {
         // Desktop: animate left seat only
