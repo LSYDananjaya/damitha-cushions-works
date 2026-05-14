@@ -4,12 +4,23 @@ import { gsap } from "gsap";
 type PreloaderProps = {
   onComplete?: () => void;
   onReadyToReveal?: () => void;
+  isReady?: boolean;
 };
 
-export function Preloader({ onComplete, onReadyToReveal }: PreloaderProps) {
+export function Preloader({ onComplete, onReadyToReveal, isReady = true }: PreloaderProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const counterRef = useRef<HTMLSpanElement>(null);
   const hasPlayedRef = useRef(false);
+  const tlRef = useRef<gsap.core.Timeline | null>(null);
+  const isReadyRef = useRef(isReady);
+  
+  isReadyRef.current = isReady;
+
+  useEffect(() => {
+    if (isReady && tlRef.current?.paused()) {
+      tlRef.current.play();
+    }
+  }, [isReady]);
 
   useEffect(() => {
     const container = containerRef.current;
@@ -61,6 +72,8 @@ export function Preloader({ onComplete, onReadyToReveal }: PreloaderProps) {
         },
       });
 
+      tlRef.current = tl;
+
       // 1. Initial UI entrance
       tl.to(".visible-logo-wrap", {
         opacity: 1,
@@ -108,6 +121,12 @@ export function Preloader({ onComplete, onReadyToReveal }: PreloaderProps) {
       );
 
       tl.addLabel("reveal");
+
+      tl.add(() => {
+        if (!isReadyRef.current) {
+          tl.pause();
+        }
+      }, "reveal");
 
       tl.call(
         () => {

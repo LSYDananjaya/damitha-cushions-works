@@ -21,7 +21,7 @@ const FIRST_FEATURES = ["Measured fit", "Supportive foam", "Clean finish"];
 
 const SECOND_FEATURES = ["Fabric and leather", "Reinforced seams", "Made for daily use"];
 
-export function SeatShowcase() {
+export function SeatShowcase({ onReady }: { onReady?: () => void }) {
   const root = useRef<HTMLElement>(null);
   const [portalTarget] = useState(() => (typeof document === "undefined" ? null : document.body));
   const heroLayer = useRef<HTMLDivElement>(null);
@@ -52,11 +52,12 @@ export function SeatShowcase() {
         loadedCount++;
         if (loadedCount === totalFrames) {
           setImagesLoaded(true);
+          onReady?.();
           renderFrame(0);
         }
       };
     });
-  }, []);
+  }, [onReady]);
 
   const renderFrame = useCallback(
     (index: number) => {
