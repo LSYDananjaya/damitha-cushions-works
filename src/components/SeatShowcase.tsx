@@ -21,7 +21,13 @@ const FIRST_FEATURES = ["Measured fit", "Supportive foam", "Clean finish"];
 
 const SECOND_FEATURES = ["Fabric and leather", "Reinforced seams", "Made for daily use"];
 
-export function SeatShowcase() {
+export function SeatShowcase({
+  onReady,
+  onProgress,
+}: {
+  onReady?: () => void;
+  onProgress?: (progress: number) => void;
+}) {
   const root = useRef<HTMLElement>(null);
   const [portalTarget] = useState(() => (typeof document === "undefined" ? null : document.body));
   const heroLayer = useRef<HTMLDivElement>(null);
@@ -50,13 +56,15 @@ export function SeatShowcase() {
       img.onload = () => {
         imagesRef.current[i] = img;
         loadedCount++;
+        onProgress?.((loadedCount / totalFrames) * 100);
         if (loadedCount === totalFrames) {
           setImagesLoaded(true);
+          onReady?.();
           renderFrame(0);
         }
       };
     });
-  }, []);
+  }, [onReady, onProgress]);
 
   const renderFrame = useCallback(
     (index: number) => {
@@ -128,9 +136,9 @@ export function SeatShowcase() {
           gsap.set(imageWrap.current, {
             xPercent: -50,
             yPercent: -50,
-            x: isMobile ? "35vw" : 0,
-            y: isMobile ? "5vh" : 230,
-            scale: isMobile ? 2.1 : 1.52,
+            x: isMobile ? 0 : 0,
+            y: isMobile ? "-2vh" : 230,
+            scale: isMobile ? 1.4 : 1.52,
           });
 
           const tl = gsap.timeline({
@@ -148,9 +156,9 @@ export function SeatShowcase() {
           tl.to(
             imageWrap.current,
             {
-              scale: isMobile ? 0.88 : 1.02,
+              scale: isMobile ? 1.05 : 1.02,
               x: 0,
-              y: isMobile ? "-14vh" : 44,
+              y: isMobile ? "-10vh" : 44,
               duration: 0.15,
             },
             0,
@@ -163,7 +171,7 @@ export function SeatShowcase() {
           // Phase 2: Settle
           tl.to(
             imageWrap.current,
-            { y: isMobile ? "-16vh" : 18, scale: isMobile ? 0.82 : 0.96, duration: 0.1 },
+            { y: isMobile ? "-14vh" : 18, scale: isMobile ? 0.95 : 0.96, duration: 0.1 },
             0.15,
           ).to(aboutText.current, { y: isMobile ? -40 : -86, duration: 0.1 }, 0.15);
 
@@ -174,8 +182,8 @@ export function SeatShowcase() {
               imageWrap.current,
               {
                 x: isMobile ? 0 : "-25vw",
-                y: isMobile ? "-26vh" : 8,
-                scale: isMobile ? 0.54 : 0.78,
+                y: isMobile ? "-20vh" : 8,
+                scale: isMobile ? 0.95 : 0.78,
                 duration: 0.15,
               },
               0.25,
@@ -204,8 +212,8 @@ export function SeatShowcase() {
               imageWrap.current,
               {
                 x: isMobile ? 0 : "27vw",
-                y: isMobile ? "-26vh" : 36,
-                scale: isMobile ? 0.54 : 0.78,
+                y: isMobile ? "-20vh" : 36,
+                scale: isMobile ? 0.95 : 0.78,
                 duration: 0.22,
                 ease: "power2.inOut",
               },
@@ -236,8 +244,8 @@ export function SeatShowcase() {
               {
                 autoAlpha: 0,
                 x: isMobile ? 0 : "30vw",
-                y: isMobile ? "-26vh" : 120,
-                scale: 0.48,
+                y: isMobile ? "-20vh" : 120,
+                scale: isMobile ? 0.95 : 0.48,
                 duration: 0.08,
               },
               0.75,
