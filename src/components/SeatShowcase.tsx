@@ -136,9 +136,9 @@ export function SeatShowcase({
           gsap.set(imageWrap.current, {
             xPercent: -50,
             yPercent: -50,
-            x: isMobile ? 0 : 0,
-            y: isMobile ? "-2vh" : 230,
-            scale: isMobile ? 1.4 : 1.52,
+            x: isMobile ? "50vw" : 0,
+            y: isMobile ? "12vh" : 230,
+            scale: isMobile ? 2.5 : 1.52,
           });
 
           const tl = gsap.timeline({
@@ -505,7 +505,7 @@ function SeatComparisonSlider({
       aria-valuemax={100}
       aria-valuenow={Math.round(split)}
       aria-valuetext={`${sliderState} view`}
-      className={`group relative aspect-[4/5] cursor-ew-resize touch-none select-none overflow-hidden outline-none drop-shadow-[0_44px_52px_rgba(0,0,0,0.2)] transition-[filter] duration-300 focus-visible:ring-2 focus-visible:ring-white/60 focus-visible:ring-offset-4 focus-visible:ring-offset-ochre ${className}`}
+      className={`group relative aspect-[4/5] cursor-ew-resize touch-pan-y select-none overflow-hidden outline-none drop-shadow-[0_44px_52px_rgba(0,0,0,0.2)] transition-[filter] duration-300 focus-visible:ring-2 focus-visible:ring-white/60 focus-visible:ring-offset-4 focus-visible:ring-offset-ochre ${className}`}
       style={splitStyle}
       onPointerDown={handlePointerDown}
       onPointerMove={handlePointerMove}
