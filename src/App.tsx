@@ -449,7 +449,25 @@ function Marquee() {
         repeat: -1,
       });
 
-      if (isMobile) return;
+      if (isMobile) {
+        gsap.fromTo(
+          container.current,
+          { y: 28, opacity: 0 },
+          {
+            y: 0,
+            opacity: 1,
+            duration: 0.72,
+            ease: "power3.out",
+            scrollTrigger: {
+              trigger: container.current,
+              start: "top 86%",
+              toggleActions: "play none none none",
+              invalidateOnRefresh: true,
+            },
+          },
+        );
+        return;
+      }
 
       ScrollTrigger.create({
         trigger: document.body,
@@ -519,6 +537,7 @@ function Services() {
       }
 
       const isMobile = window.innerWidth < 768;
+      const serviceRows = gsap.utils.toArray<HTMLElement>(".service-row");
 
       if (isMobile) {
         gsap.fromTo(
@@ -531,7 +550,7 @@ function Services() {
               trigger: seatLeftRef.current,
               start: "top 84%",
               end: "bottom 58%",
-              scrub: 0.65,
+              scrub: 0.45,
               invalidateOnRefresh: true,
             },
           },
@@ -547,12 +566,30 @@ function Services() {
                 trigger: seatRightRef.current,
                 start: "top 86%",
                 end: "bottom 62%",
-                scrub: 0.65,
+                scrub: 0.45,
                 invalidateOnRefresh: true,
               },
             },
           );
         }
+
+        gsap.fromTo(
+          serviceRows,
+          { y: 30, opacity: 0 },
+          {
+            y: 0,
+            opacity: 1,
+            duration: 0.58,
+            ease: "power3.out",
+            stagger: 0.07,
+            scrollTrigger: {
+              trigger: sectionRef.current,
+              start: "top 68%",
+              toggleActions: "play none none none",
+              invalidateOnRefresh: true,
+            },
+          },
+        );
       } else {
         // Desktop: animate left seat only
         gsap.fromTo(
@@ -580,7 +617,7 @@ function Services() {
       ref={sectionRef}
       className="surface-weave relative py-32 md:py-48 overflow-hidden"
     >
-      <div className="pointer-events-none absolute right-0 top-0 h-[50%] md:h-full w-[80vw] md:w-[50vw] z-0 opacity-90 mix-blend-multiply">
+      <div className="pointer-events-none absolute right-0 top-0 h-[50%] md:h-full w-[80vw] md:w-[50vw] z-0 opacity-20 mix-blend-multiply md:opacity-90">
         <img
           ref={seatLeftRef}
           src="/assets/seat-01-front-left.svg"
@@ -589,7 +626,7 @@ function Services() {
         />
       </div>
 
-      <div className="pointer-events-none absolute left-0 bottom-0 h-[50%] w-[80vw] z-0 opacity-90 mix-blend-multiply md:hidden">
+      <div className="pointer-events-none absolute left-0 bottom-0 h-[50%] w-[80vw] z-0 opacity-20 mix-blend-multiply md:hidden">
         <img
           ref={seatRightRef}
           src="/assets/seat-01-front-right.svg"
@@ -624,7 +661,7 @@ function Services() {
 function ServiceRow({ n, title, material, tone, tint, desc }: (typeof SERVICES)[number]) {
   return (
     <div
-      className="group border-b border-border transition-colors duration-500 hover:bg-foreground/[0.025]"
+      className="service-row group border-b border-border transition-colors duration-500 hover:bg-foreground/[0.025]"
       style={
         {
           "--service-tone": tone,
@@ -661,6 +698,7 @@ function Gallery() {
       if (!container.current) return;
 
       const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      const isMobile = window.matchMedia("(max-width: 767px), (pointer: coarse)").matches;
 
       if (reduceMotion) return;
 
@@ -709,6 +747,25 @@ function Gallery() {
       carousel?.addEventListener("pointerleave", play);
       carousel?.addEventListener("focusin", pause);
       carousel?.addEventListener("focusout", play);
+
+      if (isMobile) {
+        gsap.fromTo(
+          ".archive-carousel",
+          { y: 34, opacity: 0 },
+          {
+            y: 0,
+            opacity: 1,
+            duration: 0.7,
+            ease: "power3.out",
+            scrollTrigger: {
+              trigger: container.current,
+              start: "top 72%",
+              toggleActions: "play none none none",
+              invalidateOnRefresh: true,
+            },
+          },
+        );
+      }
 
       return () => {
         carousel?.removeEventListener("pointerenter", pause);
@@ -852,7 +909,25 @@ function Craftsmanship() {
         },
       });
 
-      if (isMobile) return;
+      if (isMobile) {
+        gsap.fromTo(
+          ".craft-content",
+          { y: 34, opacity: 0 },
+          {
+            y: 0,
+            opacity: 1,
+            duration: 0.78,
+            ease: "power3.out",
+            scrollTrigger: {
+              trigger: containerRef.current,
+              start: "top 78%",
+              toggleActions: "play none none none",
+              invalidateOnRefresh: true,
+            },
+          },
+        );
+        return;
+      }
 
       // Subtle parallax for icons, kept in sync to avoid scroll jitter.
       gsap.to([leftIconRef.current, rightIconRef.current], {
@@ -888,7 +963,7 @@ function Craftsmanship() {
         className="pointer-events-none absolute right-0 top-0 h-full w-auto opacity-0 brightness-0 invert will-change-transform md:top-12 md:right-0"
       />
 
-      <div className="mx-auto max-w-[1600px] px-6 md:px-12 flex flex-col items-center text-center relative z-10">
+      <div className="craft-content mx-auto max-w-[1600px] px-6 md:px-12 flex flex-col items-center text-center relative z-10">
         <div className="max-w-4xl text-2xl md:text-3xl lg:text-4xl leading-tight text-white/90">
           {isMounted && playTegaki && (
             <>
@@ -937,6 +1012,7 @@ function Craftsmanship() {
 }
 
 function Contact() {
+  const contactRef = useRef<HTMLElement>(null);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [msg, setMsg] = useState("");
@@ -945,6 +1021,36 @@ function Contact() {
   const whatsapp = "+94702249246";
   const mobile = "+94766438015";
   const mail = "yeharadananjaya@gmail.com";
+
+  useGSAP(
+    () => {
+      if (!contactRef.current) return;
+
+      const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      const isMobile = window.matchMedia("(max-width: 767px), (pointer: coarse)").matches;
+
+      if (reduceMotion || !isMobile) return;
+
+      gsap.fromTo(
+        ".contact-motion",
+        { y: 30, opacity: 0 },
+        {
+          y: 0,
+          opacity: 1,
+          duration: 0.66,
+          ease: "power3.out",
+          stagger: 0.08,
+          scrollTrigger: {
+            trigger: contactRef.current,
+            start: "top 74%",
+            toggleActions: "play none none none",
+            invalidateOnRefresh: true,
+          },
+        },
+      );
+    },
+    { scope: contactRef },
+  );
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -988,9 +1094,9 @@ function Contact() {
   }
 
   return (
-    <section id="contact" className="bg-foreground py-32 text-background md:py-48">
+    <section id="contact" ref={contactRef} className="bg-foreground py-32 text-background md:py-48">
       <div className="mx-auto max-w-[1600px] px-6 md:px-12">
-        <div className="grid grid-cols-12 gap-8">
+        <div className="contact-motion grid grid-cols-12 gap-8">
           <p className="col-span-12 text-[10px] font-medium uppercase tracking-[0.3em] opacity-60 md:col-span-2">
             (05) — Contact
           </p>
@@ -1003,7 +1109,7 @@ function Contact() {
         </div>
 
         <div className="mt-24 grid grid-cols-12 gap-12 md:mt-40">
-          <div className="col-span-12 md:col-span-5">
+          <div className="contact-motion col-span-12 md:col-span-5">
             <Reveal>
               <p className="text-[10px] font-medium uppercase tracking-[0.3em] opacity-60">
                 Direct
@@ -1068,7 +1174,7 @@ function Contact() {
             </Reveal>
           </div>
 
-          <div className="col-span-12 md:col-span-6 md:col-start-7">
+          <div className="contact-motion col-span-12 md:col-span-6 md:col-start-7">
             <form onSubmit={submit} className="space-y-12">
               <Field label="Your name" value={name} onChange={setName} maxLength={80} required />
 

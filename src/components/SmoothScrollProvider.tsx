@@ -16,16 +16,16 @@ export function SmoothScrollProvider() {
     const isLegacyIos = Boolean(iosMatch && Number(iosMatch[1]) < 16);
 
     const lenis = new Lenis({
-      duration: isTouchFirst ? 0.85 : 1.5,
+      duration: isTouchFirst ? 0.55 : 1.5,
       easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
       orientation: "vertical",
       gestureOrientation: "vertical",
       smoothWheel: !isTouchFirst,
       syncTouch: isTouchFirst && !isLegacyIos,
-      syncTouchLerp: 0.08,
-      touchInertiaExponent: 1.35,
+      syncTouchLerp: 0.14,
+      touchInertiaExponent: 1.18,
       wheelMultiplier: 1,
-      touchMultiplier: 1,
+      touchMultiplier: isTouchFirst ? 1.18 : 1,
     });
 
     lenis.on("scroll", ScrollTrigger.update);
