@@ -330,7 +330,7 @@ export function SeatShowcase({
           trigger: mobileHero.current,
           start: "top top",
           end: "bottom top",
-          scrub: 0.7,
+          scrub: 0.45,
           invalidateOnRefresh: true,
         },
       });
@@ -454,7 +454,7 @@ export function SeatShowcase({
           ref={mobileHero}
           copyRef={mobileHeroCopy}
           imageRef={mobileHeroImage}
-          image={SEAT_FRAMES[0].src}
+          image="/assets/mobile-hero.png"
         />
         <StaticMobileSeatSection
           image={SEAT_FRAMES[0].src}
