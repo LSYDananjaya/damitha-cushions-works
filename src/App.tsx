@@ -1,4 +1,3 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
 import emailjs from "@emailjs/browser";
 import { useRef, useState, useLayoutEffect, useEffect, useId } from "react";
 import { gsap } from "gsap";
@@ -20,37 +19,6 @@ import parisienne from "tegaki/fonts/parisienne";
 import caveat from "tegaki/fonts/caveat";
 
 gsap.registerPlugin(ScrollTrigger);
-
-export const Route = createFileRoute("/")({
-  head: () => ({
-    meta: [
-      { title: seo.title },
-      {
-        name: "description",
-        content: seo.description,
-      },
-      { property: "og:title", content: seo.businessName },
-      {
-        property: "og:description",
-        content: seo.description,
-      },
-      { property: "og:url", content: absoluteUrl("/") },
-      { property: "og:image", content: absoluteUrl(heroImg) },
-      { property: "og:image:alt", content: "Handcrafted cushions by Damitha Cushion Works" },
-      { name: "twitter:title", content: seo.title },
-      { name: "twitter:description", content: seo.description },
-      { name: "twitter:image", content: absoluteUrl(heroImg) },
-    ],
-    links: [{ rel: "canonical", href: absoluteUrl("/") }],
-    scripts: [
-      {
-        type: "application/ld+json",
-        children: JSON.stringify(buildLocalBusinessJsonLd()),
-      },
-    ],
-  }),
-  component: Index,
-});
 
 const SERVICES = [
   {
@@ -96,7 +64,7 @@ const CAROUSEL_ROWS = [
   { direction: "left", duration: 36, offset: 8 },
 ];
 
-function Index() {
+export default function App() {
   const [loading, setLoading] = useState(true);
   const [smoothScrollReady, setSmoothScrollReady] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -256,8 +224,8 @@ function Nav({ isMenuOpen, onMenuToggle }: { isMenuOpen: boolean; onMenuToggle: 
     >
       <div className="relative mx-auto flex max-w-[1600px] items-center px-6 md:px-12">
         <div className="flex-1 flex items-center">
-          <Link
-            to="/"
+          <a
+            href="/"
             hash="top"
             className="pointer-events-auto relative z-10 flex items-center overflow-hidden"
           >
@@ -270,7 +238,7 @@ function Nav({ isMenuOpen, onMenuToggle }: { isMenuOpen: boolean; onMenuToggle: 
                   : `h-14 md:h-20 ${scrolled ? "brightness-100" : "brightness-0 invert"}`
               }`}
             />
-          </Link>
+          </a>
         </div>
 
         {/* Center: Nav Pill (Absolutely Centered) */}
@@ -278,10 +246,9 @@ function Nav({ isMenuOpen, onMenuToggle }: { isMenuOpen: boolean; onMenuToggle: 
           <nav className="flex items-center p-1 rounded-full border border-white/10 bg-black/80 backdrop-blur-xl shadow-2xl transition-all duration-500">
             <div className="flex items-center gap-1 relative">
               {navLinks.map((link) => (
-                <Link
+                <a
                   key={link.id}
-                  to={link.to}
-                  hash={link.hash}
+                  href={`#${link.hash}`}
                   className={`relative z-10 px-6 py-2.5 text-[11px] font-medium uppercase tracking-[0.2em] transition-all duration-300 ${
                     activeSection === link.id ? "text-white" : "text-white/60 hover:text-white"
                   }`}
@@ -293,7 +260,7 @@ function Nav({ isMenuOpen, onMenuToggle }: { isMenuOpen: boolean; onMenuToggle: 
                       style={{ transition: "all 0.5s var(--ease-out-quint)" }}
                     />
                   )}
-                </Link>
+                </a>
               ))}
             </div>
           </nav>
@@ -301,13 +268,13 @@ function Nav({ isMenuOpen, onMenuToggle }: { isMenuOpen: boolean; onMenuToggle: 
 
         {/* Right: CTA & Mobile Menu */}
         <div className="flex-1 flex justify-end items-center gap-4 pointer-events-auto">
-          <Link
-            to="/"
+          <a
+            href="/"
             hash="contact"
             className="pressable hidden rounded-full border border-white/20 bg-white/10 px-8 py-3 text-[11px] font-medium uppercase tracking-[0.25em] text-white transition-all duration-300 hover:border-ochre hover:bg-ochre focus-visible:outline-ochre md:inline-flex"
           >
             Get a quote
-          </Link>
+          </a>
           <MobileMenuButton isMenuOpen={isMenuOpen} onMenuToggle={onMenuToggle} />
         </div>
       </div>
@@ -399,11 +366,10 @@ function MobileNav({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }
     >
       <div className="flex flex-col pt-32">
         {links.map((link, i) => (
-          <Link
+          <a
             key={link.hash}
             ref={(el) => (linksRef.current[i] = el)}
-            to={link.to}
-            hash={link.hash}
+            href={`#${link.hash}`}
             onClick={onClose}
             className="mobile-nav-link group"
           >
@@ -418,7 +384,7 @@ function MobileNav({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }
             <span className="text-ochre opacity-0 transition-all duration-500 group-hover:translate-x-2 group-hover:opacity-100">
               →
             </span>
-          </Link>
+          </a>
         ))}
       </div>
 

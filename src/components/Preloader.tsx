@@ -12,12 +12,6 @@ export function Preloader({ onComplete, onReadyToReveal }: PreloaderProps) {
   const hasPlayedRef = useRef(false);
 
   useEffect(() => {
-    /**
-     * Fixes React StrictMode double-run in development.
-     */
-    if (hasPlayedRef.current) return;
-    hasPlayedRef.current = true;
-
     const container = containerRef.current;
     if (!container) return;
 
