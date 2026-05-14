@@ -439,7 +439,8 @@ function Marquee() {
 
       let direction = -1;
 
-      const duration = window.matchMedia("(max-width: 767px)").matches ? 20 : 15;
+      const isMobile = window.matchMedia("(max-width: 767px), (pointer: coarse)").matches;
+      const duration = isMobile ? 20 : 15;
 
       const loop = gsap.to(track.current, {
         xPercent: -50,
@@ -447,6 +448,8 @@ function Marquee() {
         duration,
         repeat: -1,
       });
+
+      if (isMobile) return;
 
       ScrollTrigger.create({
         trigger: document.body,
@@ -518,7 +521,6 @@ function Services() {
       const isMobile = window.innerWidth < 768;
 
       if (isMobile) {
-        // Mobile: animate each seat separately when it comes into view
         gsap.fromTo(
           seatLeftRef.current,
           { clipPath: "polygon(0% 0%, 100% 0%, 100% 0%, 0% 0%)" },
@@ -527,13 +529,13 @@ function Services() {
             ease: "none",
             scrollTrigger: {
               trigger: seatLeftRef.current,
-              start: "top 75%",
-              end: "bottom 50%",
-              scrub: 1.5,
+              start: "top 84%",
+              end: "bottom 58%",
+              scrub: 0.65,
+              invalidateOnRefresh: true,
             },
           },
         );
-
         if (seatRightRef.current) {
           gsap.fromTo(
             seatRightRef.current,
@@ -543,9 +545,10 @@ function Services() {
               ease: "none",
               scrollTrigger: {
                 trigger: seatRightRef.current,
-                start: "top 80%", // start when it enters the viewport
-                end: "bottom 60%", // finish before it leaves
-                scrub: 1.5,
+                start: "top 86%",
+                end: "bottom 62%",
+                scrub: 0.65,
+                invalidateOnRefresh: true,
               },
             },
           );
@@ -809,6 +812,7 @@ function Craftsmanship() {
       if (!containerRef.current) return;
 
       const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      const isMobile = window.matchMedia("(max-width: 767px), (pointer: coarse)").matches;
 
       ScrollTrigger.create({
         trigger: containerRef.current,
@@ -823,7 +827,7 @@ function Craftsmanship() {
             (icon): icon is HTMLImageElement => Boolean(icon),
           );
 
-          if (reduceMotion) {
+          if (reduceMotion || isMobile) {
             setShowName(true);
             setShowTitle(true);
             gsap.set(decorativeIcons, { opacity: 0.25, scale: 1 });
@@ -847,6 +851,8 @@ function Craftsmanship() {
           }
         },
       });
+
+      if (isMobile) return;
 
       // Subtle parallax for icons, kept in sync to avoid scroll jitter.
       gsap.to([leftIconRef.current, rightIconRef.current], {
@@ -1277,21 +1283,23 @@ function Footer() {
         );
       }
 
-      // Subtle vertical parallax for the whole footer
-      gsap.fromTo(
-        footerRef.current,
-        { y: isMobile ? 30 : 56 },
-        {
-          y: 0,
-          ease: "none",
-          scrollTrigger: {
-            trigger: footerRef.current,
-            start: "top bottom",
-            end: "top top",
-            scrub: true,
+      if (!isMobile) {
+        // Subtle vertical parallax for the whole footer
+        gsap.fromTo(
+          footerRef.current,
+          { y: 56 },
+          {
+            y: 0,
+            ease: "none",
+            scrollTrigger: {
+              trigger: footerRef.current,
+              start: "top bottom",
+              end: "top top",
+              scrub: true,
+            },
           },
-        },
-      );
+        );
+      }
     },
     { scope: footerRef },
   );

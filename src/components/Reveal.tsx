@@ -21,6 +21,7 @@ export function Reveal({
       if (!comp.current) return;
 
       const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      const isMobile = window.matchMedia("(max-width: 767px)").matches;
 
       if (reduceMotion) {
         gsap.set(comp.current, { opacity: 1, y: 0 });
@@ -39,7 +40,7 @@ export function Reveal({
           scrollTrigger: {
             trigger: comp.current,
             start: "top 90%",
-            toggleActions: "play none none reverse",
+            toggleActions: isMobile ? "play none none none" : "play none none reverse",
           },
         },
       );
@@ -63,6 +64,7 @@ export function MaskLines({ lines, className }: { lines: string[]; className?: s
       const els = container.current.querySelectorAll(".mask-line-inner");
 
       const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      const isMobile = window.matchMedia("(max-width: 767px)").matches;
 
       if (reduceMotion) {
         gsap.set(els, { y: "0%", rotateZ: 0 });
@@ -81,7 +83,7 @@ export function MaskLines({ lines, className }: { lines: string[]; className?: s
           scrollTrigger: {
             trigger: container.current,
             start: "top 90%",
-            toggleActions: "play none none reverse",
+            toggleActions: isMobile ? "play none none none" : "play none none reverse",
           },
         },
       );

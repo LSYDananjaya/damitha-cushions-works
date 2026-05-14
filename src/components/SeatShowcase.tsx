@@ -1,4 +1,4 @@
-import { forwardRef, useCallback, useRef, useState } from "react";
+import { forwardRef, useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useGSAP } from "@gsap/react";
 import { gsap } from "gsap";
@@ -39,25 +39,60 @@ export function SeatShowcase({
   const secondPanel = useRef<HTMLDivElement>(null);
   const finalLayer = useRef<HTMLDivElement>(null);
   const imageWrap = useRef<HTMLDivElement>(null);
+  const mobileHero = useRef<HTMLDivElement>(null);
+  const mobileHeroCopy = useRef<HTMLDivElement>(null);
+  const mobileHeroImage = useRef<HTMLImageElement>(null);
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const imagesRef = useRef<HTMLImageElement[]>([]);
   const [imagesLoaded, setImagesLoaded] = useState(false);
+  const [isMobileViewport, setIsMobileViewport] = useState(
+    () => typeof window !== "undefined" && window.matchMedia("(max-width: 767px)").matches,
+  );
   const frameObj = useRef({ index: 0 });
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const query = window.matchMedia("(max-width: 767px)");
+    const updateViewportState = () => setIsMobileViewport(query.matches);
+
+    updateViewportState();
+    query.addEventListener("change", updateViewportState);
+
+    return () => query.removeEventListener("change", updateViewportState);
+  }, []);
+
+  useEffect(() => {
+    if (!imagesLoaded) return;
+    requestAnimationFrame(() => ScrollTrigger.refresh());
+  }, [imagesLoaded, isMobileViewport]);
 
   // Preload images
   useGSAP(() => {
-    let loadedCount = 0;
-    const totalFrames = SEAT_FRAMES.length;
+    let readyFrameCount = 0;
+    let hasReportedReady = false;
+    const isMobile = window.matchMedia("(max-width: 767px), (pointer: coarse)").matches;
+    const requiredFrameIndexes = isMobile
+      ? new Set([0, 15, 29, 36])
+      : new Set(SEAT_FRAMES.map((_, index) => index));
+    const totalRequiredFrames = requiredFrameIndexes.size;
 
     SEAT_FRAMES.forEach((frame, i) => {
       const img = new Image();
       img.src = frame.src;
       img.onload = () => {
         imagesRef.current[i] = img;
-        loadedCount++;
-        onProgress?.((loadedCount / totalFrames) * 100);
-        if (loadedCount === totalFrames) {
+
+        if (!requiredFrameIndexes.has(i)) {
+          return;
+        }
+
+        readyFrameCount++;
+        onProgress?.((readyFrameCount / totalRequiredFrames) * 100);
+
+        if (!hasReportedReady && readyFrameCount === totalRequiredFrames) {
+          hasReportedReady = true;
           setImagesLoaded(true);
           onReady?.();
           renderFrame(0);
@@ -96,11 +131,11 @@ export function SeatShowcase({
 
   // Use GSAP Ticker for smooth 60fps rendering
   useGSAP(() => {
-    if (!imagesLoaded) return;
+    if (!imagesLoaded || isMobileViewport) return;
     const tickerUpdate = () => renderFrame(frameObj.current.index);
     gsap.ticker.add(tickerUpdate);
     return () => gsap.ticker.remove(tickerUpdate);
-  }, [imagesLoaded, renderFrame]);
+  }, [imagesLoaded, isMobileViewport, renderFrame]);
 
   useGSAP(
     () => {
@@ -115,10 +150,14 @@ export function SeatShowcase({
           reduceMotion: "(prefers-reduced-motion: reduce)",
         },
         (context) => {
-          const { isMobile = false, reduceMotion = false } = (context.conditions ?? {}) as {
-            isMobile?: boolean;
+          const { isDesktop = false, reduceMotion = false } = (context.conditions ?? {}) as {
+            isDesktop?: boolean;
             reduceMotion?: boolean;
           };
+
+          if (!isDesktop) {
+            return;
+          }
 
           if (reduceMotion) {
             renderFrame(0);
@@ -126,19 +165,19 @@ export function SeatShowcase({
           }
 
           // Initial Setup
-          gsap.set(aboutLayer.current, { opacity: 0, y: isMobile ? 40 : 80 });
+          gsap.set(aboutLayer.current, { opacity: 0, y: 80 });
           gsap.set([firstPanel.current, secondPanel.current], {
             autoAlpha: 0,
-            y: isMobile ? 30 : 80,
+            y: 80,
           });
-          gsap.set(finalLayer.current, { autoAlpha: 0, y: isMobile ? 40 : 70 });
+          gsap.set(finalLayer.current, { autoAlpha: 0, y: 70 });
 
           gsap.set(imageWrap.current, {
             xPercent: -50,
             yPercent: -50,
-            x: isMobile ? "50vw" : 0,
-            y: isMobile ? "12vh" : 230,
-            scale: isMobile ? 2.5 : 1.52,
+            x: 0,
+            y: 230,
+            scale: 1.52,
           });
 
           const tl = gsap.timeline({
@@ -156,9 +195,9 @@ export function SeatShowcase({
           tl.to(
             imageWrap.current,
             {
-              scale: isMobile ? 1.05 : 1.02,
+              scale: 1.02,
               x: 0,
-              y: isMobile ? "-10vh" : 44,
+              y: 44,
               duration: 0.15,
             },
             0,
@@ -166,14 +205,14 @@ export function SeatShowcase({
             .to(heroCopy.current, { y: -60, opacity: 0, duration: 0.1 }, 0.02)
             .to(heroBackdrop.current, { opacity: 0, scale: 1.1, duration: 0.15 }, 0)
             .to(aboutLayer.current, { opacity: 1, y: 0, duration: 0.1 }, 0.08)
-            .to(aboutText.current, { y: isMobile ? -20 : -44, duration: 0.15 }, 0.05);
+            .to(aboutText.current, { y: -44, duration: 0.15 }, 0.05);
 
           // Phase 2: Settle
-          tl.to(
-            imageWrap.current,
-            { y: isMobile ? "-14vh" : 18, scale: isMobile ? 0.95 : 0.96, duration: 0.1 },
+          tl.to(imageWrap.current, { y: 18, scale: 0.96, duration: 0.1 }, 0.15).to(
+            aboutText.current,
+            { y: -86, duration: 0.1 },
             0.15,
-          ).to(aboutText.current, { y: isMobile ? -40 : -86, duration: 0.1 }, 0.15);
+          );
 
           // Phase 3: First Feature
           tl.to(heroLayer.current, { opacity: 0, duration: 0.05 }, 0.25)
@@ -181,9 +220,9 @@ export function SeatShowcase({
             .to(
               imageWrap.current,
               {
-                x: isMobile ? 0 : "-25vw",
-                y: isMobile ? "-20vh" : 8,
-                scale: isMobile ? 0.95 : 0.78,
+                x: "-25vw",
+                y: 8,
+                scale: 0.78,
                 duration: 0.15,
               },
               0.25,
@@ -211,9 +250,9 @@ export function SeatShowcase({
             .to(
               imageWrap.current,
               {
-                x: isMobile ? 0 : "27vw",
-                y: isMobile ? "-20vh" : 36,
-                scale: isMobile ? 0.95 : 0.78,
+                x: "27vw",
+                y: 36,
+                scale: 0.78,
                 duration: 0.22,
                 ease: "power2.inOut",
               },
@@ -243,9 +282,9 @@ export function SeatShowcase({
               imageWrap.current,
               {
                 autoAlpha: 0,
-                x: isMobile ? 0 : "30vw",
-                y: isMobile ? "-20vh" : 120,
-                scale: isMobile ? 0.95 : 0.48,
+                x: "30vw",
+                y: 120,
+                scale: 0.48,
                 duration: 0.08,
               },
               0.75,
@@ -267,6 +306,51 @@ export function SeatShowcase({
     { scope: root, dependencies: [imagesLoaded] },
   );
 
+  useGSAP(
+    () => {
+      if (!mobileHero.current || !imagesLoaded) return;
+
+      const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+      if (reduceMotion) {
+        gsap.set([mobileHeroCopy.current, mobileHeroImage.current], { clearProps: "all" });
+        return;
+      }
+
+      gsap.fromTo(
+        mobileHeroImage.current,
+        { y: 28, scale: 0.94, opacity: 0 },
+        {
+          y: 0,
+          scale: 1,
+          opacity: 1,
+          duration: 0.9,
+          ease: "power3.out",
+          scrollTrigger: {
+            trigger: mobileHero.current,
+            start: "top 82%",
+            toggleActions: "play none none none",
+            invalidateOnRefresh: true,
+          },
+        },
+      );
+
+      gsap.to(mobileHeroCopy.current, {
+        y: -34,
+        opacity: 0.42,
+        ease: "none",
+        scrollTrigger: {
+          trigger: mobileHero.current,
+          start: "bottom 92%",
+          end: "bottom 38%",
+          scrub: 0.45,
+          invalidateOnRefresh: true,
+        },
+      });
+    },
+    { scope: root, dependencies: [imagesLoaded] },
+  );
+
   const seatFrame = (
     <div
       ref={imageWrap}
@@ -284,7 +368,7 @@ export function SeatShowcase({
 
   return (
     <section id="top" ref={root} className="seat-showcase relative bg-canvas-warm">
-      <div className="seat-showcase__stage sticky top-0 min-h-screen overflow-hidden bg-canvas-warm">
+      <div className="seat-showcase__stage sticky top-0 hidden min-h-screen overflow-hidden bg-canvas-warm md:block">
         <HeroSeatReveal
           heroLayerRef={heroLayer}
           heroCopyRef={heroCopy}
@@ -311,11 +395,17 @@ export function SeatShowcase({
         <SeatFinalCTA ref={finalLayer} />
       </div>
 
-      {portalTarget ? createPortal(seatFrame, portalTarget) : null}
+      {portalTarget && !isMobileViewport ? createPortal(seatFrame, portalTarget) : null}
 
-      <div aria-hidden className="h-[480vh]" />
+      <div aria-hidden className="hidden h-[480vh] md:block" />
 
-      <div className="seat-showcase__mobile hidden">
+      <div className="seat-showcase__mobile block md:hidden">
+        <MobileSeatHero
+          ref={mobileHero}
+          copyRef={mobileHeroCopy}
+          imageRef={mobileHeroImage}
+          image={SEAT_FRAMES[0].src}
+        />
         <StaticMobileSeatSection
           image={SEAT_FRAMES[0].src}
           alt="Custom cushion workshop showcase image"
@@ -345,6 +435,60 @@ export function SeatShowcase({
     </section>
   );
 }
+
+const MobileSeatHero = forwardRef<
+  HTMLDivElement,
+  {
+    copyRef: React.RefObject<HTMLDivElement | null>;
+    imageRef: React.RefObject<HTMLImageElement | null>;
+    image: string;
+  }
+>(function MobileSeatHero({ copyRef, imageRef, image }, ref) {
+  return (
+    <section
+      ref={ref}
+      className="relative min-h-[100svh] overflow-hidden bg-leather px-6 pb-10 pt-28 text-white"
+    >
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_26%,oklch(0.99_0.006_82/0.14),transparent_34%),linear-gradient(120deg,oklch(0.16_0.012_62)_0%,oklch(0.075_0.012_39)_52%,oklch(0.22_0.017_74)_100%)]" />
+      <div className="absolute inset-0 opacity-[0.14] grayscale contrast-150 mix-blend-screen seat-hero-lines" />
+      <div className="absolute inset-x-0 bottom-0 h-44 bg-gradient-to-t from-brand-red/20 to-transparent" />
+
+      <div className="relative z-10 flex min-h-[calc(100svh-9.5rem)] flex-col justify-end">
+        <img
+          ref={imageRef}
+          src={image}
+          alt="Custom cushion workshop showcase image"
+          className="mobile-seat-hero-image pointer-events-none mx-auto mb-8 h-auto max-h-[44svh] w-full max-w-[20rem] object-contain drop-shadow-[0_28px_36px_rgba(0,0,0,0.38)]"
+          draggable={false}
+        />
+
+        <div ref={copyRef} className="mobile-seat-hero-copy">
+          <h1 className="font-display text-[clamp(4.5rem,21vw,6.4rem)] uppercase leading-[0.78] tracking-tight">
+            Custom cushions, shaped by hand.
+          </h1>
+          <p className="mt-6 max-w-sm text-base leading-7 text-white/68">
+            From sofa seats and patio pads to vehicle cushions and one-off replacements, we measure,
+            cut, stitch, and finish every piece for the way it will be used.
+          </p>
+          <div className="mt-8 flex flex-wrap gap-2.5">
+            {["Made to measure", "Foam replacement", "Workshop stitching"].map((item) => (
+              <span
+                key={item}
+                className="rounded-full border border-white/18 px-3.5 py-2 text-[9px] font-semibold uppercase tracking-[0.2em] text-white/70"
+              >
+                {item}
+              </span>
+            ))}
+          </div>
+          <div className="mt-8 flex justify-between border-t border-white/15 pt-5 text-[9px] font-medium uppercase tracking-[0.28em] text-white/48">
+            <span>Damitha Cushion Works</span>
+            <span>Scroll</span>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+});
 
 const SeatFinalCTA = forwardRef<HTMLDivElement>(function SeatFinalCTA(_, ref) {
   return (
@@ -394,10 +538,11 @@ function SeatComparisonSlider({
   className?: string;
 }) {
   const [split, setSplit] = useState(50);
-  const [dragging, setDragging] = useState(false);
   const sliderRef = useRef<HTMLDivElement>(null);
   const pullRef = useRef<HTMLDivElement>(null);
   const lastXRef = useRef<number | null>(null);
+  const draggingRef = useRef(false);
+  const pointerStartRef = useRef<{ x: number; y: number; pointerId: number } | null>(null);
   const resetTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const clampSplit = (value: number) => Math.min(100, Math.max(0, value));
@@ -412,15 +557,40 @@ function SeatComparisonSlider({
   }, []);
 
   const handlePointerDown = (event: React.PointerEvent<HTMLDivElement>) => {
-    setDragging(true);
+    pointerStartRef.current = {
+      x: event.clientX,
+      y: event.clientY,
+      pointerId: event.pointerId,
+    };
     lastXRef.current = event.clientX;
     if (resetTimeoutRef.current) clearTimeout(resetTimeoutRef.current);
-    event.currentTarget.setPointerCapture(event.pointerId);
-    updateSplitFromClientX(event.clientX);
+
+    if (event.pointerType !== "touch") {
+      draggingRef.current = true;
+      event.currentTarget.setPointerCapture(event.pointerId);
+      updateSplitFromClientX(event.clientX);
+    }
   };
 
   const handlePointerMove = (event: React.PointerEvent<HTMLDivElement>) => {
-    if (!dragging) return;
+    if (!draggingRef.current && pointerStartRef.current?.pointerId === event.pointerId) {
+      const deltaX = event.clientX - pointerStartRef.current.x;
+      const deltaY = event.clientY - pointerStartRef.current.y;
+
+      if (Math.abs(deltaY) > Math.abs(deltaX) && Math.abs(deltaY) > 8) {
+        return;
+      }
+
+      if (Math.abs(deltaX) > 8) {
+        draggingRef.current = true;
+        event.currentTarget.setPointerCapture(event.pointerId);
+      } else {
+        return;
+      }
+    }
+
+    if (!draggingRef.current) return;
+    event.preventDefault();
     updateSplitFromClientX(event.clientX);
 
     if (lastXRef.current !== null && pullRef.current) {
@@ -436,7 +606,7 @@ function SeatComparisonSlider({
 
       if (resetTimeoutRef.current) clearTimeout(resetTimeoutRef.current);
       resetTimeoutRef.current = setTimeout(() => {
-        if (pullRef.current && dragging) {
+        if (pullRef.current && draggingRef.current) {
           gsap.to(pullRef.current, {
             rotation: 0,
             duration: 0.8,
@@ -450,7 +620,8 @@ function SeatComparisonSlider({
   };
 
   const handlePointerEnd = (event: React.PointerEvent<HTMLDivElement>) => {
-    setDragging(false);
+    draggingRef.current = false;
+    pointerStartRef.current = null;
     lastXRef.current = null;
     if (resetTimeoutRef.current) clearTimeout(resetTimeoutRef.current);
     if (event.currentTarget.hasPointerCapture(event.pointerId)) {

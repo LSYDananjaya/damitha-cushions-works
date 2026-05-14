@@ -1,5 +1,8 @@
 import { useEffect, useRef } from "react";
 import { gsap } from "gsap";
+import { ScrollTrigger } from "gsap/ScrollTrigger";
+
+gsap.registerPlugin(ScrollTrigger);
 
 type PreloaderProps = {
   onComplete?: () => void;
@@ -16,10 +19,9 @@ export function Preloader({
 }: PreloaderProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const counterRef = useRef<HTMLSpanElement>(null);
-  const hasPlayedRef = useRef(false);
   const tlRef = useRef<gsap.core.Timeline | null>(null);
   const isReadyRef = useRef(isReady);
-  
+
   isReadyRef.current = isReady;
 
   useEffect(() => {
@@ -30,7 +32,7 @@ export function Preloader({
 
   useEffect(() => {
     if (!counterRef.current) return;
-    
+
     gsap.to(counterRef.current, {
       innerHTML: Math.round(progress),
       duration: 0.3,
@@ -38,7 +40,7 @@ export function Preloader({
       onUpdate: function () {
         if (counterRef.current) {
           counterRef.current.textContent = String(
-            Math.round(Number(this.targets()[0].innerHTML))
+            Math.round(Number(this.targets()[0].innerHTML)),
           ).padStart(3, "0");
         }
       },
@@ -56,6 +58,25 @@ export function Preloader({
     if (!container) return;
 
     const scrollLockTargets = [document.documentElement, document.body];
+    const isMobile = window.matchMedia("(max-width: 767px), (pointer: coarse)").matches;
+    const timings = {
+      logoIn: isMobile ? 0.85 : 2,
+      uiIn: isMobile ? 0.55 : 1,
+      uiStagger: isMobile ? 0.045 : 0.1,
+      overlap: isMobile ? "-=0.55" : "-=1.5",
+      logoOut: isMobile ? 0.22 : 0.4,
+      uiOut: isMobile ? 0.28 : 0.6,
+      maskZoom: isMobile ? 0.85 : 2.2,
+      revealOffset: isMobile ? 0.82 : 2.1,
+      fadeOffset: isMobile ? 0.9 : 2.2,
+      fadeOut: isMobile ? 0.22 : 0.4,
+    };
+
+    const unlockScroll = () => {
+      gsap.set(scrollLockTargets, {
+        overflow: "",
+      });
+    };
 
     const ctx = gsap.context(() => {
       gsap.set(scrollLockTargets, {
@@ -92,11 +113,10 @@ export function Preloader({
           ease: "power4.inOut",
         },
         onComplete: () => {
-          gsap.set(scrollLockTargets, {
-            overflow: "",
-          });
+          unlockScroll();
           if (container) container.style.display = "none";
           onComplete?.();
+          requestAnimationFrame(() => ScrollTrigger.refresh());
         },
       });
 
@@ -106,7 +126,7 @@ export function Preloader({
       tl.to(".visible-logo-wrap", {
         opacity: 1,
         scale: 1,
-        duration: 2,
+        duration: timings.logoIn,
         ease: "expo.out",
       });
 
@@ -115,11 +135,11 @@ export function Preloader({
         {
           opacity: 1,
           y: 0,
-          duration: 1,
-          stagger: 0.1,
+          duration: timings.uiIn,
+          stagger: timings.uiStagger,
           ease: "power3.out",
         },
-        "-=1.5",
+        timings.overlap,
       );
 
       tl.addLabel("reveal");
@@ -143,7 +163,7 @@ export function Preloader({
         ".visible-logo-wrap",
         {
           opacity: 0,
-          duration: 0.4,
+          duration: timings.logoOut,
           ease: "power2.inOut",
         },
         "reveal",
@@ -153,7 +173,7 @@ export function Preloader({
         ".preloader-ui",
         {
           opacity: 0,
-          duration: 0.6,
+          duration: timings.uiOut,
           ease: "power2.out",
         },
         "reveal",
@@ -169,7 +189,7 @@ export function Preloader({
         ".mask-logo-group",
         {
           scale: 600,
-          duration: 2.2,
+          duration: timings.maskZoom,
           ease: "expo.inOut",
         },
         "reveal",
@@ -182,23 +202,25 @@ export function Preloader({
           fill: "black",
           duration: 0.1,
         },
-        "reveal+=2.1",
+        `reveal+=${timings.revealOffset}`,
       );
 
       tl.to(
         container,
         {
           opacity: 0,
-          duration: 0.4,
           pointerEvents: "none",
           visibility: "hidden",
           ease: "power2.inOut",
+          duration: timings.fadeOut,
         },
-        "reveal+=2.2",
+        `reveal+=${timings.fadeOffset}`,
       );
     }, container);
 
     return () => {
+      unlockScroll();
+      tlRef.current?.kill();
       ctx.revert();
     };
   }, [onComplete, onReadyToReveal]);
