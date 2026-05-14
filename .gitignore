@@ -1,0 +1,51 @@
+# Dependencies
+node_modules/
+
+# Build outputs
+dist/
+dist-ssr/
+.output/
+.vinxi/
+.nitro/
+.tanstack/
+
+# Cloudflare / Wrangler
+.wrangler/
+.dev.vars
+
+# Environment files
+.env
+.env.*
+!.env.example
+*.local
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+pnpm-debug.log*
+lerna-debug.log*
+dev-server.log
+
+# Temporary local artifacts
+tmp-*
+*.tmp
+*.temp
+
+# Test and coverage output
+coverage/
+playwright-report/
+test-results/
+
+# Editor and OS files
+.vscode/*
+!.vscode/extensions.json
+.idea/
+.DS_Store
+Thumbs.db
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
