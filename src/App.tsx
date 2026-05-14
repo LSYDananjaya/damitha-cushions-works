@@ -67,6 +67,7 @@ const CAROUSEL_ROWS = [
 export default function App() {
   const [loading, setLoading] = useState(true);
   const [heroLoaded, setHeroLoaded] = useState(false);
+  const [heroProgress, setHeroProgress] = useState(0);
   const [smoothScrollReady, setSmoothScrollReady] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const scrollPositionRef = useRef(0);
@@ -156,7 +157,7 @@ export default function App() {
         <Cursor />
         <Nav isMenuOpen={isMenuOpen} onMenuToggle={() => setIsMenuOpen((value) => !value)} />
         <MobileNav isOpen={isMenuOpen} onClose={() => setIsMenuOpen(false)} />
-        <SeatShowcase onReady={() => setHeroLoaded(true)} />
+        <SeatShowcase onReady={() => setHeroLoaded(true)} onProgress={setHeroProgress} />
         <Marquee />
         <Services />
         <Craftsmanship />
@@ -165,7 +166,14 @@ export default function App() {
         <Footer />
       </div>
 
-      {loading && <Preloader onReadyToReveal={onReadyToReveal} onComplete={onComplete} isReady={heroLoaded} />}
+      {loading && (
+        <Preloader
+          onReadyToReveal={onReadyToReveal}
+          onComplete={onComplete}
+          isReady={heroLoaded}
+          progress={heroProgress}
+        />
+      )}
     </>
   );
 }

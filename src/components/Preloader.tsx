@@ -5,9 +5,15 @@ type PreloaderProps = {
   onComplete?: () => void;
   onReadyToReveal?: () => void;
   isReady?: boolean;
+  progress?: number;
 };
 
-export function Preloader({ onComplete, onReadyToReveal, isReady = true }: PreloaderProps) {
+export function Preloader({
+  onComplete,
+  onReadyToReveal,
+  isReady = true,
+  progress = 100,
+}: PreloaderProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const counterRef = useRef<HTMLSpanElement>(null);
   const hasPlayedRef = useRef(false);
@@ -23,10 +29,32 @@ export function Preloader({ onComplete, onReadyToReveal, isReady = true }: Prelo
   }, [isReady]);
 
   useEffect(() => {
+    if (!counterRef.current) return;
+    
+    gsap.to(counterRef.current, {
+      innerHTML: Math.round(progress),
+      duration: 0.3,
+      snap: { innerHTML: 1 },
+      onUpdate: function () {
+        if (counterRef.current) {
+          counterRef.current.textContent = String(
+            Math.round(Number(this.targets()[0].innerHTML))
+          ).padStart(3, "0");
+        }
+      },
+    });
+
+    gsap.to(".preloader-progress-line", {
+      scaleX: progress / 100,
+      duration: 0.3,
+      ease: "power2.out",
+    });
+  }, [progress]);
+
+  useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
 
-    const counterObj = { value: 0 };
     const scrollLockTargets = [document.documentElement, document.body];
 
     const ctx = gsap.context(() => {
@@ -92,32 +120,6 @@ export function Preloader({ onComplete, onReadyToReveal, isReady = true }: Prelo
           ease: "power3.out",
         },
         "-=1.5",
-      );
-
-      // 2. Counter and Progress
-      tl.to(
-        counterObj,
-        {
-          value: 100,
-          duration: 3,
-          ease: "power2.inOut",
-          onUpdate: () => {
-            if (!counterRef.current) return;
-            const val = Math.round(counterObj.value);
-            counterRef.current.textContent = String(val).padStart(3, "0");
-          },
-        },
-        "-=1.5",
-      );
-
-      tl.to(
-        ".preloader-progress-line",
-        {
-          scaleX: 1,
-          duration: 3,
-          ease: "power2.inOut",
-        },
-        "<",
       );
 
       tl.addLabel("reveal");
